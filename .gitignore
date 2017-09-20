@@ -95,7 +95,6 @@ Temporary Items
 access.log
 main
 pkg/
-readme.md
 vendor/github.com/nightlyone/lockfile/git-hooks/
 vendor/github.com/prometheus/procfs/fixtures/26231/fd/
 vendor/github.com/prometheus/procfs/fixtures/26232/fd/

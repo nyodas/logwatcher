@@ -2,14 +2,18 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/gizak/termui"
+	"github.com/gizak/termui/extra"
 	"github.com/hpcloud/tail"
-	logformater "github.com/nyodas/logwatcher/logformater"
+	"github.com/nyodas/logwatcher/alert"
+	"github.com/nyodas/logwatcher/logformater"
+	"github.com/nyodas/logwatcher/parser"
 	"github.com/rcrowley/go-metrics"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"io"
-	"regexp"
+	"k8s.io/kubernetes/pkg/util/wait"
+	"os"
+	"strings"
 )
 
 var (
@@ -18,14 +22,18 @@ var (
 			Short('i').
 			Default("5s").
 			Duration()
+	alertCeiling = kingpin.Flag("alert", "Ceiling for the alert.").
+			Short('a').
+			Default("10").
+			Int64()
 	logFile = kingpin.Flag("file", "File to watch").
 		Required().
-		Short('f').String()
+		Short('f').
+		String()
+	uiReady = kingpin.Flag("ui", "File to watch").
+		Short('u').
+		Bool()
 )
-
-const NCSACommonLogFormat = `(\S+)[[:space:]](\S+)[[:space:]](\S+)[[:space:]]\[(.*?)\][[:space:]]"([A-Z]+?) (/?[0-9A-Za-z_-]+)?(?:/?\S+)? (.*?)"[[:space:]](\d+)[[:space:]](\d+)`
-
-var NCSACommonLogFormatRegexp = regexp.MustCompile(NCSACommonLogFormat)
 
 func main() {
 	kingpin.Version("0.0.1")
@@ -38,82 +46,156 @@ func main() {
 		ReOpen: true,
 	}
 	metricRegistry := metrics.NewRegistry()
-	go func() {
-		if t, err := tail.TailFile(*logFile, tailConfig); err != nil {
-			fmt.Println(err)
-		} else {
-			for line := range t.Lines {
-				if len(line.Text) < 1 {
-					continue
-				}
-				result_slice := NCSACommonLogFormatRegexp.FindAllStringSubmatch(line.Text, -1)
-				if len(result_slice) < 1 {
-					// In case of a bad match continue.
-					continue
-				}
-				// TODO: Do something w/h the timestamp
-				c := metrics.GetOrRegisterMeter(result_slice[0][6], metricRegistry)
-				totalMeter := metrics.GetOrRegisterMeter("total", metricRegistry)
-				c.Mark(1)
-				totalMeter.Mark(1)
-			}
-		}
-	}()
+	// Preregister total , for alerting purpose.
+	totalMeter := metrics.GetOrRegisterMeter("TOTAL", metricRegistry)
 
-	//TODO: Move this in a function
-	var headersTable = []string{"Section", "Count", "Rate 1m", "Rate 5m", "Rate 15m"}
-	err := termui.Init()
+	alerter := alert.NewAlerter(*alertCeiling)
+	go alerter.Poll(metricRegistry)
+	t, err := tail.TailFile(*logFile, tailConfig)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
-	defer termui.Close()
-	var metricsTable [][]string
-	metricsTable = append(metricsTable, headersTable)
-	table1 := termui.NewTable()
-	table1.Rows = metricsTable
-	table1.FgColor = termui.ColorWhite
-	table1.BgColor = termui.ColorDefault
-	termui.Body.AddRows(
-		termui.NewRow(
-			termui.NewCol(12, 0, table1),
-		),
-	)
-	// calculate layout
-	termui.Body.Align()
-	// Create termui refresh timer (Stats are created a each refresh)
-	termui.Merge("timer", termui.NewTimerCh(*statsInterval))
-	termui.Render(termui.Body)
-	termui.Handle("/sys/kbd/q", func(termui.Event) {
-		termui.StopLoop()
-	})
-	termui.Handle("/sys/kbd/C-c", func(termui.Event) {
-		termui.StopLoop()
-	})
-	termui.Handle("/timer/"+statsInterval.String(), func(e termui.Event) {
-		rows := logformater.GenLogs(metricRegistry)
-		// TODO: Move this in a func
-		var metricsTable [][]string
-		metricsTable = append(metricsTable, headersTable)
-		if len(rows) > 0 {
-			metricsTable = append(metricsTable, rows...)
+	go func(t chan *tail.Line) {
+		for line := range t {
+			result_slice := parser.ParseNCSA(line.Text)
+			if len(result_slice) < 1 {
+				// In case of a bad match continue.
+				continue
+			}
+			// TODO: Do something w/h the timestamp
+			sectionMeter := metrics.GetOrRegisterMeter(result_slice[0][6], metricRegistry)
+			totalMeter = metrics.GetOrRegisterMeter("TOTAL", metricRegistry)
+			sectionMeter.Mark(1)
+			totalMeter.Mark(1)
 		}
-		table1 := termui.NewTable()
-		table1.Rows = metricsTable
-		table1.FgColor = termui.ColorWhite
-		table1.BgColor = termui.ColorDefault
-		table1.TextAlign = termui.AlignCenter
-		table1.Analysis()
-		table1.SetSize()
+	}(t.Lines)
 
-		table1.Border = true
-		uiRows := termui.NewRow(
-			termui.NewCol(12, 0, table1),
+	if *uiReady {
+		var headersTable = []string{"Section", "Count", "Rate 1m", "Rate 5m", "Rate 15m"}
+		err = termui.Init()
+		if err != nil {
+			panic(err)
+		}
+		defer termui.Close()
+		metricsUitable := termui.NewTable()
+		metricsUitable.Rows = [][]string{
+			headersTable,
+		}
+		metricsUitable.BorderLabel = "Metrics"
+		metricsUitable.TextAlign = termui.AlignCenter
+
+		alertTextBox := termui.NewPar("")
+		alertTextBox.BorderLabel = "Alerts"
+		alertTextBox.Align()
+		alertTextBox.Height = 8
+		alertTextBox.BorderFg = termui.ColorYellow
+
+		alertHistoryTextBox := termui.NewPar("")
+		alertHistoryTextBox.BorderLabel = "Alert History"
+		alertHistoryTextBox.Align()
+		alertHistoryTextBox.Height = termui.TermHeight()
+		alertHistoryTextBox.Width = termui.TermWidth()
+		alertHistoryTextBox.BorderFg = termui.ColorYellow
+
+		metricsUi := termui.NewGrid()
+		metricsUi.Width = termui.TermWidth()
+		metricsUi.AddRows(
+			termui.NewRow(
+				termui.NewCol(12, 0, metricsUitable),
+			),
+			termui.NewRow(
+				termui.NewCol(12, 0, alertTextBox),
+			),
 		)
-		termui.Body.Rows[0] = uiRows
-		//fmt.Println(metricsTable)
-		termui.Clear()
+		metricsUi.Align()
+		// calculate layout
+		//termui.Body.Align()
+
+		header := termui.NewPar("Press q to quit, Press j or k to switch tabs")
+		header.Height = 1
+		header.Width = 50
+		header.Border = false
+		header.TextBgColor = termui.ColorBlue
+
+		tab1 := extra.NewTab("Metrics")
+		tab1.AddBlocks(metricsUi)
+		tab2 := extra.NewTab("Alert History")
+		tab2.AddBlocks(alertHistoryTextBox)
+
+		tabpane := extra.NewTabpane()
+		tabpane.Y = 1
+		tabpane.Width = 60
+		tabpane.Border = true
+		tabpane.SetTabs(*tab1, *tab2)
+		termui.Render(header, tabpane)
+
+		// Create termui refresh timer (Stats are created a each refresh)
+		termui.Merge("timer", termui.NewTimerCh(*statsInterval))
 		termui.Render(termui.Body)
-	})
-	termui.Loop()
+		termui.Handle("/sys/kbd/q", func(termui.Event) {
+			termui.StopLoop()
+		})
+		termui.Handle("/sys/kbd/C-c", func(termui.Event) {
+			termui.StopLoop()
+		})
+		termui.Handle("/sys/kbd/j", func(termui.Event) {
+			tabpane.SetActiveLeft()
+			termui.Clear()
+			termui.Render(header, tabpane)
+		})
+		termui.Handle("/sys/kbd/k", func(termui.Event) {
+			tabpane.SetActiveRight()
+			termui.Clear()
+			termui.Render(header, tabpane)
+		})
+
+		termui.Handle("/timer/"+statsInterval.String(), func(e termui.Event) {
+			rows := logformater.GenLogs(metricRegistry)
+			//TODO: Move this in a func
+			var metricsTimedTable [][]string
+			metricsTimedTable = append(metricsTimedTable, headersTable)
+			if len(rows) > 0 {
+				metricsTimedTable = append(metricsTimedTable, rows...)
+			}
+			metricsUitable.Rows = metricsTimedTable
+			metricsUitable.FgColors = make([]termui.Attribute, len(metricsTimedTable))
+			metricsUitable.BgColors = make([]termui.Attribute, len(metricsTimedTable))
+			metricsUitable.Align()
+			metricsUitable.Analysis()
+			metricsUitable.SetSize()
+			metricsUitable.Border = true
+			metricsUi.Align()
+			termui.Clear()
+			termui.Render(header, tabpane)
+			//termui.Render(termui.Body)
+		})
+		go func(alerter alert.Alerter) {
+			for al := range alerter.AlertBus {
+				msgArray := strings.Split(alertTextBox.Text, "\n")
+				if len(msgArray) > 3 {
+					alertTextBox.Text = strings.Join(msgArray[:3], "\n")
+				}
+				msgHistoryArray := strings.Split(alertHistoryTextBox.Text, "\n")
+				if len(msgHistoryArray) > 50 {
+					alertHistoryTextBox.Text = strings.Join(msgHistoryArray[:3], "\n")
+				}
+				alertTextBox.Text = al.String() + "\n" + alertTextBox.Text
+				alertHistoryTextBox.Text = al.String() + "\n" + alertHistoryTextBox.Text
+				termui.Clear()
+				metricsUi.Align()
+				termui.Render(header, tabpane)
+			}
+		}(alerter)
+		termui.Loop()
+	} else {
+		go alerter.Notify()
+		//Loop and Print logs.
+		wait.PollInfinite(*statsInterval, func() (bool, error) {
+			rows := logformater.GenLogs(metricRegistry)
+			logformater.PrintLogs(rows, os.Stdout)
+			return false, nil
+		})
+	}
 
 }
