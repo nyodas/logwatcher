@@ -13,7 +13,7 @@ go build
 # Use ctrl+c or q to quit
 ./logwatcher -f /tb9/opt/nginx/log/access.log -i 10s --ui
 # Standard console output (less pretty ,history w/h scrolling)
-./logwatcher -f /tb9/opt/nginx/log/access.log -i 10s --ui
+./logwatcher -f /tb9/opt/nginx/log/access.log -i 10s
 
 usage: logwatcher --file=FILE [<flags>]
 
@@ -27,8 +27,8 @@ Flags:
 
 ```
 ## What it looks like
-[Pane1-metrics](https://raw.githubusercontent.com/nyodas/logwatcher/master/docs/standard.png)
-[Pane2-history](https://raw.githubusercontent.com/nyodas/logwatcher/master/docs/alerthistory.png)
+![Pane1-metrics](https://raw.githubusercontent.com/nyodas/logwatcher/master/docs/standard.png)
+![Pane2-history](https://raw.githubusercontent.com/nyodas/logwatcher/master/docs/alerthistory.png)
 
 
 # HTTP log monitoring console program
