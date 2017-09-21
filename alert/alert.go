@@ -8,32 +8,32 @@ import (
 	"time"
 )
 
-type alert struct {
+type Alert struct {
 	Count   int64
 	Section string
 	Firing  bool
 	Time    time.Time
 }
 
-func (al alert) String() string {
+func (al Alert) String() string {
 	if al.Firing {
-		return fmt.Sprintf("[[FIRING]](fg-red) High traffic generated an alert - hits = %d, triggered at %s", al.Count, al.Time)
+		return fmt.Sprintf("[[FIRING]](fg-red)  - High traffic generated an alert - hits = %d, triggered at %s", al.Count, al.Time)
 	}
-	return fmt.Sprintf("[[RECOVER]](fg-green) High traffic generated an alert - current hits = %d, recovered at %s", al.Count, al.Time)
+	return fmt.Sprintf("[[RECOVER]](fg-green) - High traffic generated an alert - current hits = %d, recovered at %s", al.Count, al.Time)
 }
 
 type Alerter struct {
 	previousSnapshot map[string]int64
 	ceiling          int64
-	alerts           []alert
-	AlertBus         chan *alert
+	alerts           []Alert
+	AlertBus         chan *Alert
 }
 
 func NewAlerter(ceiling int64) Alerter {
 	alerter := Alerter{
 		ceiling:          ceiling,
 		previousSnapshot: make(map[string]int64),
-		AlertBus:         make(chan *alert),
+		AlertBus:         make(chan *Alert),
 	}
 	return alerter
 }
@@ -47,8 +47,7 @@ func (a *Alerter) GenAlert(logMetrics metrics.Registry) {
 }
 
 func (a *Alerter) Poll(logMetrics metrics.Registry) {
-	log.Printf("%s", logMetrics)
-	wait.PollInfinite(3*time.Second, func() (bool, error) {
+	wait.PollInfinite(2*time.Minute, func() (bool, error) {
 		a.GenAlert(logMetrics)
 		return false, nil
 	})
@@ -62,7 +61,7 @@ func (a *Alerter) Save(count int64) {
 		lastStatus = a.alerts[len(a.alerts)-1].Firing
 	}
 	firing := count > a.ceiling
-	currentAlert := alert{
+	currentAlert := Alert{
 		Count:  count,
 		Firing: firing,
 		Time:   time.Now(),
@@ -84,10 +83,10 @@ func (a *Alerter) Notify() {
 	}
 }
 
-func (a *Alerter) NotifyFiring(currentAlert alert) {
+func (a *Alerter) NotifyFiring(currentAlert Alert) {
 	log.Printf(currentAlert.String())
 }
 
-func (a *Alerter) NotifyRecover(currentAlert alert) {
+func (a *Alerter) NotifyRecover(currentAlert Alert) {
 	log.Printf(currentAlert.String())
 }

@@ -1,3 +1,34 @@
+# How to build
+```
+go get github.com/nyodas/logwatcher
+```
+```bash
+go build
+```
+
+# How to run
+```
+# Termui output (pretty)
+# Use the k & j key to move between metrics pane and alerts history.
+# Use ctrl+c or q to quit
+./logwatcher -f /tb9/opt/nginx/log/access.log -i 10s --ui
+# Standard console output (less pretty ,history w/h scrolling)
+./logwatcher -f /tb9/opt/nginx/log/access.log -i 10s --ui
+
+usage: logwatcher --file=FILE [<flags>]
+
+Flags:
+      --help         Show context-sensitive help (also try --help-long and --help-man).
+  -i, --interval=10s Interval for stats logging in seconds
+  -a, --alert=10     Ceiling for the alert.
+  -f, --file=FILE    File to watch
+  -u, --ui           Use termui
+      --version      Show application version.
+
+```
+## What it looks like
+[Pane1-metrics](https://raw.githubusercontent.com/nyodas/logwatcher/master/docs/standard.png)
+[Pane2-history](https://raw.githubusercontent.com/nyodas/logwatcher/master/docs/alerthistory.png)
 
 
 # HTTP log monitoring console program
@@ -29,7 +60,7 @@ Create a simple console program that monitors HTTP traffic on your machine:
 - [X] History of alert on traffic.
 - [X] Unit Test
 - [ ] More Unit Test
-- [ ] Clean up
+- [X] Clean up
 - [ ] More Clean up
 - [ ] Smarter and clean Code w/h interface and so on
 
@@ -38,7 +69,7 @@ Create a simple console program that monitors HTTP traffic on your machine:
  - [ ] Add flags to parse an historical log file.
  - [ ] [Termui]('https://github.com/gizak/termui') - Proper layout for printing stats and posibly graph.
      - [X] Started work in #termui branch 
-     - [ ] Make it availlable via a flag
+     - [X] Make it availlable via a flag
  - [ ] [Prometheus]('https://github.com/prometheus/prometheus')/[Timeseries]('https://github.com/prometheus/tsdb') in app
     - [ ] Alerting and query done by smarter men than me.
     - [ ] More Accuracy on metrics
@@ -48,3 +79,4 @@ Create a simple console program that monitors HTTP traffic on your machine:
  - [ ] Extend the facility to parse more log format (nginx combined & more)
  - [ ] More alerting options and more alerting rules.
  - [ ] Have a web page for easy historical data.
+ - [ ] Fix all the TODO
