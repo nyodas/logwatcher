@@ -14,7 +14,7 @@ import (
 	"github.com/nyodas/logwatcher/ui"
 	"github.com/rcrowley/go-metrics"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"k8s.io/kubernetes/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (

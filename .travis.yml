@@ -1,0 +1,16 @@
+language: go
+
+sudo: required
+dist: trusty
+
+go:
+  - 1.7.5
+
+os:
+  - linux
+
+install:
+  - go build
+
+script:
+  - go test -cover -v $(go list ./... | grep -v vendor/)

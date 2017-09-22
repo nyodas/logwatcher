@@ -141,7 +141,7 @@ func (ui *Ui) UpdateMetricsUI(metricsTimedTable [][]string) {
 }
 
 // Update the recent alert panel w/h the new value from the current alert
-func (ui *Ui) UpdateMetricsAlert(al *alert.Alert) {
+func (ui *Ui) UpdateMetricsAlert(al alert.Alert) {
 	msgArray := strings.Split(ui.MetricsUI.shortAlertsTextBox.Text, "\n")
 	if len(msgArray) > 3 {
 		ui.MetricsUI.shortAlertsTextBox.Text = strings.Join(msgArray[:3], "\n")
@@ -153,7 +153,7 @@ func (ui *Ui) UpdateMetricsAlert(al *alert.Alert) {
 }
 
 // Update the Alert History panel w/h the new value from the current alert
-func (ui *Ui) UpdateAlertHistory(al *alert.Alert) {
+func (ui *Ui) UpdateAlertHistory(al alert.Alert) {
 	msgHistoryArray := strings.Split(ui.AlertsUI.alertsHistoryTextBox.Text, "\n")
 	if len(msgHistoryArray) > 50 {
 		ui.AlertsUI.alertsHistoryTextBox.Text = strings.Join(msgHistoryArray[:3], "\n")

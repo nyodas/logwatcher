@@ -82,7 +82,7 @@ func (s *MyTestSuite) TestGenLogsMaxRow() {
 	rows := GenLogs(s.testMetricsRegistryLarge)
 	rowsLen := len(rows)
 	assert.NotEmpty(s.T(), rows, "isEmpty")
-	assert.Len(s.T(), rowsLen, 10, "Max Len should be 10")
+	assert.Len(s.T(), rows, 10, "Max Len should be 10")
 	for idx, tt := range rows {
 		rowIdx := rowsLen + 1 // The sort + drop need a +1 shift
 		assert.Contains(s.T(), tt[0], s.testRowsLarge[rowIdx-idx][0], "Check if ouput has corect information")

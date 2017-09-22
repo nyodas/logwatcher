@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/rcrowley/go-metrics"
-	"k8s.io/kubernetes/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type Alert struct {
@@ -20,7 +20,7 @@ type Alerter struct {
 	previousSnapshot map[string]int64
 	ceiling          int64
 	alerts           []Alert
-	AlertBus         chan *Alert
+	AlertBus         chan Alert
 }
 
 func (al Alert) String() string {
@@ -34,7 +34,7 @@ func NewAlerter(ceiling int64) Alerter {
 	alerter := Alerter{
 		ceiling:          ceiling,
 		previousSnapshot: make(map[string]int64),
-		AlertBus:         make(chan *Alert),
+		AlertBus:         make(chan Alert),
 	}
 	return alerter
 }
@@ -48,7 +48,7 @@ func (a *Alerter) GenAlert(logMetrics metrics.Registry) {
 }
 
 func (a *Alerter) Poll(logMetrics metrics.Registry) {
-	wait.PollInfinite(2*time.Second, func() (bool, error) {
+	wait.PollInfinite(2*time.Minute, func() (bool, error) {
 		a.GenAlert(logMetrics)
 		return false, nil
 	})
@@ -71,15 +71,15 @@ func (a *Alerter) Save(count int64) {
 		return
 	}
 	a.alerts = append(a.alerts, currentAlert)
-	a.AlertBus <- &currentAlert
+	a.AlertBus <- currentAlert
 }
 
 func (a *Alerter) Notify() {
 	for n := range a.AlertBus {
 		if n.Firing {
-			a.NotifyFiring(*n)
+			a.NotifyFiring(n)
 		} else {
-			a.NotifyRecover(*n)
+			a.NotifyRecover(n)
 		}
 	}
 }
