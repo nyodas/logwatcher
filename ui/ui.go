@@ -1,11 +1,14 @@
 package ui
 
 import (
+	"strings"
+	"time"
+
 	"github.com/gizak/termui"
 	"github.com/gizak/termui/extra"
 	"github.com/nyodas/logwatcher/alert"
-	"strings"
-	"time"
+	"github.com/nyodas/logwatcher/logformater"
+	"github.com/rcrowley/go-metrics"
 )
 
 // TODO: This is an overall dump of the ui , without error checking and proper use of the function. Need rework
@@ -122,6 +125,7 @@ func (ui *Ui) PrepareTabs() *extra.Tabpane {
 	return panes
 }
 
+// Update the table w/h the stats from the Metrics pane
 func (ui *Ui) UpdateMetricsUI(metricsTimedTable [][]string) {
 	ui.MetricsUI.metricsTable.Rows = metricsTimedTable
 	ui.MetricsUI.metricsTable.FgColors = make([]termui.Attribute, len(metricsTimedTable))
@@ -136,6 +140,7 @@ func (ui *Ui) UpdateMetricsUI(metricsTimedTable [][]string) {
 	termui.Render(ui.Tabpanes.header, ui.Tabpanes.panes)
 }
 
+// Update the recent alert panel w/h the new value from the current alert
 func (ui *Ui) UpdateMetricsAlert(al *alert.Alert) {
 	msgArray := strings.Split(ui.MetricsUI.shortAlertsTextBox.Text, "\n")
 	if len(msgArray) > 3 {
@@ -147,6 +152,7 @@ func (ui *Ui) UpdateMetricsAlert(al *alert.Alert) {
 	termui.Render(ui.Tabpanes.header, ui.Tabpanes.panes)
 }
 
+// Update the Alert History panel w/h the new value from the current alert
 func (ui *Ui) UpdateAlertHistory(al *alert.Alert) {
 	msgHistoryArray := strings.Split(ui.AlertsUI.alertsHistoryTextBox.Text, "\n")
 	if len(msgHistoryArray) > 50 {
@@ -157,11 +163,31 @@ func (ui *Ui) UpdateAlertHistory(al *alert.Alert) {
 	termui.Render(ui.Tabpanes.header, ui.Tabpanes.panes)
 }
 
-func (ui *Ui) PrepareTimer(statsInterval time.Duration) {
-	// Create termui refresh timer (Stats are created a each refresh)
-	termui.Merge("timer", termui.NewTimerCh(statsInterval))
+// Handle the update of the alarms
+func (ui *Ui) AlertsHandler(alerter alert.Alerter) {
+	for al := range alerter.AlertBus {
+		ui.UpdateMetricsAlert(al)
+		ui.UpdateAlertHistory(al)
+	}
 }
 
+// Create and handle the timer for the Metrics panes and table.
+func (ui *Ui) LaunchMetricsUiTimer(statsInterval time.Duration, metricRegistry metrics.Registry) {
+	// Create termui refresh timer (Stats are created a each refresh)
+	termui.Merge("timer", termui.NewTimerCh(statsInterval))
+	termui.Handle("/timer/"+statsInterval.String(), func(e termui.Event) {
+		rows := logformater.GenLogs(metricRegistry)
+		//TODO: Move this in a func
+		var metricsTimedTable [][]string
+		metricsTimedTable = append(metricsTimedTable, ui.MetricsTableHeaders)
+		if len(rows) > 0 {
+			metricsTimedTable = append(metricsTimedTable, rows...)
+		}
+		ui.UpdateMetricsUI(metricsTimedTable)
+	})
+}
+
+// Launch the handler for the various client input.
 func (ui *Ui) PrepareKeyHandler() {
 	termui.Handle("/sys/kbd/q", func(termui.Event) {
 		termui.StopLoop()

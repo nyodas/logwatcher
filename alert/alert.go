@@ -47,7 +47,7 @@ func (a *Alerter) GenAlert(logMetrics metrics.Registry) {
 }
 
 func (a *Alerter) Poll(logMetrics metrics.Registry) {
-	wait.PollInfinite(2*time.Minute, func() (bool, error) {
+	wait.PollInfinite(2*time.Second, func() (bool, error) {
 		a.GenAlert(logMetrics)
 		return false, nil
 	})
