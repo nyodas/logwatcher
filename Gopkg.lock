@@ -115,15 +115,9 @@
   packages = ["pkg/util/runtime","pkg/util/wait"]
   revision = "1168e538ea3ccf444854d1fdd5681d2d876680a7"
 
-[[projects]]
-  name = "k8s.io/kubernetes"
-  packages = ["pkg/util/wait"]
-  revision = "4bc5e7f9a6c25dc4c03d4d656f2cefd21540e28c"
-  version = "v1.7.6"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "71a5ac45f63b4da5701945396d43fa84228141ddd3f78d0de2e22ca3ce9e925a"
+  inputs-digest = "2c148059f2201847b437fb59586a2141ae20426e99d4ecd7177d7a8a6cdfe3e3"
   solver-name = "gps-cdcl"
   solver-version = 1
