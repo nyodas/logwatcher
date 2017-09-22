@@ -6,6 +6,10 @@
 go get github.com/nyodas/logwatcher
 ```
 ```bash
+# Restore vendor just in case.
+which dep || go get -u github.com/golang/dep/cmd/dep 
+dep ensure
+
 go build
 ```
 
@@ -19,7 +23,6 @@ go build
 ./logwatcher -f /tb9/opt/nginx/log/access.log -i 10s
 
 usage: logwatcher --file=FILE [<flags>]
-
 Flags:
       --help         Show context-sensitive help (also try --help-long and --help-man).
   -i, --interval=10s Interval for stats logging in seconds
@@ -27,7 +30,6 @@ Flags:
   -f, --file=FILE    File to watch
   -u, --ui           Use termui
       --version      Show application version.
-
 ```
 ## What it looks like
 ![Pane1-metrics](https://raw.githubusercontent.com/nyodas/logwatcher/master/docs/standard.png)
