@@ -1,4 +1,6 @@
-#Logwatcher [![Build Status](https://travis-ci.org/nyodas/logwatcher.svg?branch=master)](https://travis-ci.org/nyodas/logwatcher)
+
+# Logwatcher [![Build Status](https://travis-ci.org/nyodas/logwatcher.svg?branch=master)](https://travis-ci.org/nyodas/logwatcher)
+
 # How to build
 ```
 go get github.com/nyodas/logwatcher

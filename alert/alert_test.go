@@ -1,9 +1,8 @@
 package alert
 
 import (
-	"testing"
-
 	"sync"
+	"testing"
 
 	"github.com/rcrowley/go-metrics"
 	"github.com/stretchr/testify/assert"
