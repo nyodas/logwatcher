@@ -2,11 +2,12 @@ package logformater
 
 import (
 	"fmt"
-	"github.com/olekukonko/tablewriter"
-	"github.com/rcrowley/go-metrics"
 	"io"
 	"sort"
 	"strconv"
+
+	"github.com/olekukonko/tablewriter"
+	"github.com/rcrowley/go-metrics"
 )
 
 var headersTable = []string{"Section", "Count", "Rate 1m", "Rate 5m", "Rate 15m"}

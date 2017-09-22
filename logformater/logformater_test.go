@@ -2,10 +2,11 @@ package logformater
 
 import (
 	"bytes"
+	"testing"
+
 	"github.com/rcrowley/go-metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type MyTestSuite struct {

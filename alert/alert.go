@@ -2,10 +2,11 @@ package alert
 
 import (
 	"fmt"
-	"github.com/rcrowley/go-metrics"
-	"k8s.io/kubernetes/pkg/util/wait"
 	"log"
 	"time"
+
+	"github.com/rcrowley/go-metrics"
+	"k8s.io/kubernetes/pkg/util/wait"
 )
 
 type Alert struct {
@@ -15,18 +16,18 @@ type Alert struct {
 	Time    time.Time
 }
 
-func (al Alert) String() string {
-	if al.Firing {
-		return fmt.Sprintf("[[FIRING]](fg-red)  - High traffic generated an alert - hits = %d, triggered at %s", al.Count, al.Time)
-	}
-	return fmt.Sprintf("[[RECOVER]](fg-green) - High traffic generated an alert - current hits = %d, recovered at %s", al.Count, al.Time)
-}
-
 type Alerter struct {
 	previousSnapshot map[string]int64
 	ceiling          int64
 	alerts           []Alert
 	AlertBus         chan *Alert
+}
+
+func (al Alert) String() string {
+	if al.Firing {
+		return fmt.Sprintf("[[FIRING]](fg-red)  - High traffic generated an alert - hits = %d, triggered at %s", al.Count, al.Time)
+	}
+	return fmt.Sprintf("[[RECOVER]](fg-green) - High traffic generated an alert - current hits = %d, recovered at %s", al.Count, al.Time)
 }
 
 func NewAlerter(ceiling int64) Alerter {
