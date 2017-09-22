@@ -11,6 +11,8 @@ os:
 
 install:
   - go build
+  - go get -u github.com/golang/dep/cmd/dep
 
 script:
+  - dep ensure
   - go test -cover -v $(go list ./... | grep -v vendor/)
