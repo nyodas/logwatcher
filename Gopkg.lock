@@ -1,4 +1,4 @@
-memo = "429d21ecaeb8935b8944e614c5c0f392f50bc0ebc7ffcc0f49190ad736c7ae3e"
+memo = "095385e0289e9c8b0d147602f9b67cd3760af2d8da37a5914b76e98ef83dbcf1"
 
 [[projects]]
   branch = "master"
@@ -50,7 +50,7 @@ memo = "429d21ecaeb8935b8944e614c5c0f392f50bc0ebc7ffcc0f49190ad736c7ae3e"
 
 [[projects]]
   name = "github.com/go-kit/kit"
-  packages = ["log"]
+  packages = ["log","log/level"]
   revision = "a9ca6725cbbea455e61c6bc8a1ed28e81eb3493b"
   version = "v0.5.0"
 
@@ -102,6 +102,12 @@ memo = "429d21ecaeb8935b8944e614c5c0f392f50bc0ebc7ffcc0f49190ad736c7ae3e"
   version = "v0.3.0"
 
 [[projects]]
+  name = "github.com/opentracing/opentracing-go"
+  packages = [".","log"]
+  revision = "1949ddbfd147afd4d964a9f00b24eb291e0e7c38"
+  version = "v1.0.2"
+
+[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -132,10 +138,16 @@ memo = "429d21ecaeb8935b8944e614c5c0f392f50bc0ebc7ffcc0f49190ad736c7ae3e"
   revision = "abf152e5f3e97f2fafac028d2cc06c1feb87ffa5"
 
 [[projects]]
+  name = "github.com/prometheus/prometheus"
+  packages = ["pkg/labels","pkg/textparse","pkg/timestamp","pkg/value","promql","storage","storage/tsdb","util/stats","util/strutil","util/testutil"]
+  revision = "64c7932e851f3276391fc3e216cd30f447d4924e"
+  version = "v2.0.0-beta.5"
+
+[[projects]]
   branch = "master"
   name = "github.com/prometheus/tsdb"
   packages = [".","chunks","labels"]
-  revision = "0fe67df9f289e81c1f09d9928dca8e24b6ce5196"
+  revision = "69f105f4f9478e929ef2a7d7553a7558b1de5c84"
 
 [[projects]]
   branch = "master"
